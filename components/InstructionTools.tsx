@@ -1,0 +1,1 @@
+// Denna fil är ersatt av SmartChecklist.tsx, Whiteboard.tsx och QRCodeWidget.tsx

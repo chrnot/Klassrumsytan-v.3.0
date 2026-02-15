@@ -1,0 +1,9 @@
+{
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "name": "Klassrumsytan v3.0",
+  "description": "Uppdaterad version av klassrumsytan"
+}

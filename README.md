@@ -1,11 +1,20 @@
-<div align="center">
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+# 🏫 Klassrumsytan v2.0
 
-  <h1>Built with AI Studio</h2>
+Ett modernt, interaktivt verktyg för lärare byggt i React. Innehåller verktyg för lektionsstruktur, formativ feedback, källkritik och pedagogisk AI.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## 🛠 Verktyg i urval:
+- **Lektions-Navigatör**: Strukturera mål och moment.
+- **Glasspinnar**: Rättvis slumpning av elever.
+- **Källkritik-filtret**: Interaktiv granskning av källor.
+- **Två stjärnor och en önskan**: Formativ feedback.
+- **AI-Assistent**: Generera 5-minutersaktiviteter med Gemini API.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## 🚀 Kom igång lokalt
+1. Klona repot.
+2. Kör `npm install`.
+3. Skapa en `.env` fil och lägg till din `API_KEY` för Gemini.
+4. Kör `npm run dev`.
 
-</div>
+## 📄 Licens
+MIT
