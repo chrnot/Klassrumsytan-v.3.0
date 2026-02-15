@@ -4,7 +4,6 @@ import { GoogleGenAI, GenerateContentResponse, Modality, LiveServerMessage } fro
 import { Message } from '../types';
 
 interface GeminiAssistantProps {
-  // Dessa props styrs nu internt för att hålla Live-logiken isolerad
 }
 
 // Hjälpfunktioner för ljudhantering enligt API-riktlinjer
@@ -26,7 +25,9 @@ function encodeBase64(bytes: Uint8Array) {
 }
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
+  // Säkerställ att vi använder en ren ArrayBuffer för att undvika SharedArrayBuffer-problem
+  const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+  const dataInt16 = new Int16Array(arrayBuffer);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
   for (let channel = 0; channel < numChannels; channel++) {
@@ -115,7 +116,10 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = () => {
             if (base64Audio && audioContexts.current.output) {
               const ctx = audioContexts.current.output;
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
-              const buffer = await decodeAudioData(decodeBase64(base64Audio), ctx, 24000, 1);
+              
+              const uint8 = decodeBase64(base64Audio);
+              const buffer = await decodeAudioData(uint8, ctx, 24000, 1);
+              
               const source = ctx.createBufferSource();
               source.buffer = buffer;
               source.connect(ctx.destination);
