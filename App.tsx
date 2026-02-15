@@ -25,6 +25,7 @@ import TieredTaskCard from './components/TieredTaskCard';
 import ConversationBubbles from './components/ConversationBubbles';
 import TwoStarsAndAWish from './components/TwoStarsAndAWish';
 import SourceCriticismFilter from './components/SourceCriticismFilter';
+import VennDiagram from './components/VennDiagram';
 
 const App: React.FC = () => {
   const queryParams = new URLSearchParams(window.location.search);
@@ -88,6 +89,7 @@ const App: React.FC = () => {
       case ToolType.CONVERSATION_BUBBLES: return { width: 850, height: 800 };
       case ToolType.STARS_WISH: return { width: 700, height: 750 };
       case ToolType.SOURCE_CRITICISM: return { width: 380, height: 750 };
+      case ToolType.VENN_DIAGRAM: return { width: 980, height: 820 };
       default: return { width: 700, height: 750 };
     }
   };
@@ -112,6 +114,7 @@ const App: React.FC = () => {
     [ToolType.CONVERSATION_BUBBLES]: "Erbjud språkliga stöttor och meningsbyggare.",
     [ToolType.STARS_WISH]: "Formativ feedback: två styrkor och en önskan.",
     [ToolType.SOURCE_CRITICISM]: "Interaktivt analysverktyg för källkritik.",
+    [ToolType.VENN_DIAGRAM]: "Jämför två eller tre begrepp med interaktiva cirklar.",
     [ToolType.LINK]: "En snabbknapp till en webbplats.",
     [ToolType.DASHBOARD]: "",
     [ToolType.BACKGROUND]: "",
@@ -205,6 +208,7 @@ const App: React.FC = () => {
     [ToolType.CONVERSATION_BUBBLES]: { title: 'Snack-Bubblan', subtitle: 'Språkligt stöd', icon: '💬' },
     [ToolType.STARS_WISH]: { title: 'Stjärnor & Önskan', subtitle: 'Formativ feedback', icon: '⭐' },
     [ToolType.SOURCE_CRITICISM]: { title: 'Källkritik', subtitle: 'Utvärdera källans pålitlighet', icon: '🔍' },
+    [ToolType.VENN_DIAGRAM]: { title: 'Venn-Analys', subtitle: 'Jämför begrepp', icon: '⭕⭕' },
     [ToolType.LINK]: { title: 'Länk', icon: '🔗' }
   };
 
@@ -230,6 +234,7 @@ const App: React.FC = () => {
       case ToolType.CONVERSATION_BUBBLES: return <ConversationBubbles />;
       case ToolType.STARS_WISH: return <TwoStarsAndAWish />;
       case ToolType.SOURCE_CRITICISM: return <SourceCriticismFilter />;
+      case ToolType.VENN_DIAGRAM: return <VennDiagram />;
       default: return null;
     }
   };

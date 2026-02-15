@@ -22,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, onClose, op
 
   const tools: ToolInfo[] = [
     { type: ToolType.LESSON_NAVIGATOR, label: 'Lektions-Navigatör', icon: '🧭', desc: 'Strukturera lektionens mål, begrepp och tidslinje.', color: 'bg-indigo-100 text-indigo-600' },
+    { type: ToolType.VENN_DIAGRAM, label: 'Venn-Analys', icon: '⭕⭕', desc: 'Jämför och kategorisera begrepp med cirklar.', color: 'bg-indigo-100 text-indigo-600' },
     { type: ToolType.CHECKLIST, label: 'Arbetsgång', icon: '✅', desc: 'Skapa tydliga checklistor med timers och fokusläge.', color: 'bg-emerald-100 text-emerald-600' },
     { type: ToolType.CONVERSATION_BUBBLES, label: 'Snack-Bubblan 2.0', icon: '💬', desc: 'Språkligt stöd och meningsbyggare för alla ämnen.', color: 'bg-indigo-100 text-indigo-600' },
     { type: ToolType.STARS_WISH, label: 'Stjärnor & Önskan', icon: '⭐', desc: 'Ge formativ feedback med två stjärnor och en önskan.', color: 'bg-amber-100 text-amber-600' },
@@ -39,6 +40,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, onClose, op
     { type: ToolType.ASSISTANT, label: 'AI-Hjälp', icon: '✨', desc: 'Få förslag på snabba aktiviteter direkt från AI.', color: 'bg-indigo-100 text-indigo-600' },
   ];
 
+  const [hState, setHState] = useState<ToolInfo | null>(null);
+
   return (
     <aside className="w-full bg-white/95 backdrop-blur-md border-r border-slate-200 flex flex-col h-screen relative">
       <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between">
@@ -50,17 +53,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, onClose, op
       </div>
       <nav className="flex-1 p-3 flex flex-col gap-1 overflow-y-auto relative custom-scrollbar">
         {tools.map(item => (
-          <button key={item.type} onClick={() => onSelectTool(item.type)} onMouseEnter={() => setHoveredTool(item)} onMouseLeave={() => setHoveredTool(null)} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left relative ${activeTool === item.type ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+          <button key={item.type} onClick={() => onSelectTool(item.type)} onMouseEnter={() => setHState(item)} onMouseLeave={() => setHState(null)} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left relative ${activeTool === item.type ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
             <span className="text-xl group-hover:scale-125 transition-transform">{item.icon}</span>
             <span className="hidden md:block text-sm font-medium flex-1">{item.label}</span>
             {openWidgets.includes(item.type) && <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" />}
           </button>
         ))}
-        {hoveredTool && (
+        {hState && (
           <div className="hidden md:block absolute left-[100%] ml-2 top-0 mt-2 w-64 p-5 bg-white rounded-3xl shadow-2xl border border-slate-100 z-[10000] pointer-events-none">
-            <div className={`w-12 h-12 ${hoveredTool.color} rounded-2xl flex items-center justify-center text-xl mb-4`}>{hoveredTool.icon}</div>
-            <h3 className="font-bold text-slate-800 text-lg mb-2">{hoveredTool.label}</h3>
-            <p className="text-slate-500 text-xs leading-relaxed">{hoveredTool.desc}</p>
+            <div className={`w-12 h-12 ${hState.color} rounded-2xl flex items-center justify-center text-xl mb-4`}>{hState.icon}</div>
+            <h3 className="font-bold text-slate-800 text-lg mb-2">{hState.label}</h3>
+            <p className="text-slate-500 text-xs leading-relaxed">{hState.desc}</p>
           </div>
         )}
       </nav>
