@@ -22,7 +22,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, onClose, op
 
   const tools: ToolInfo[] = [
     { type: ToolType.LESSON_NAVIGATOR, label: 'Lektions-Navigatör', icon: '🧭', desc: 'Strukturera lektionens mål, begrepp och tidslinje.', color: 'bg-indigo-100 text-indigo-600' },
+    { type: ToolType.CONCEPT_DIAMOND, label: 'Begrepps-Diamant', icon: '💠', desc: 'Analysera begrepp med Frayer-modellen.', color: 'bg-indigo-100 text-indigo-600' },
     { type: ToolType.VENN_DIAGRAM, label: 'Venn-Analys', icon: '⭕⭕', desc: 'Jämför och kategorisera begrepp med cirklar.', color: 'bg-indigo-100 text-indigo-600' },
+    { type: ToolType.SAMR_HISSEN, label: 'SAMR-Hissen', icon: '🛗', desc: 'Utveckla din undervisning steg för steg med SAMR.', color: 'bg-indigo-100 text-indigo-600' },
     { type: ToolType.CHECKLIST, label: 'Arbetsgång', icon: '✅', desc: 'Skapa tydliga checklistor med timers och fokusläge.', color: 'bg-emerald-100 text-emerald-600' },
     { type: ToolType.CONVERSATION_BUBBLES, label: 'Snack-Bubblan 2.0', icon: '💬', desc: 'Språkligt stöd och meningsbyggare för alla ämnen.', color: 'bg-indigo-100 text-indigo-600' },
     { type: ToolType.STARS_WISH, label: 'Stjärnor & Önskan', icon: '⭐', desc: 'Ge formativ feedback med två stjärnor och en önskan.', color: 'bg-amber-100 text-amber-600' },

@@ -26,6 +26,8 @@ import ConversationBubbles from './components/ConversationBubbles';
 import TwoStarsAndAWish from './components/TwoStarsAndAWish';
 import SourceCriticismFilter from './components/SourceCriticismFilter';
 import VennDiagram from './components/VennDiagram';
+import SAMRElevator from './components/SAMRElevator';
+import ConceptDiamond from './components/ConceptDiamond';
 
 const App: React.FC = () => {
   const queryParams = new URLSearchParams(window.location.search);
@@ -44,6 +46,9 @@ const App: React.FC = () => {
   });
   
   const [activePageIndex, setActivePageIndex] = useState(0);
+  const [editingPageIndex, setEditingPageIndex] = useState<number | null>(null);
+  const [editNameValue, setEditNameValue] = useState('');
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isStudent && window.innerWidth > 1024);
   const [isBackgroundSettingsOpen, setIsBackgroundSettingsOpen] = useState(false);
   const [isSystemMenuOpen, setIsSystemMenuOpen] = useState(false);
@@ -70,6 +75,49 @@ const App: React.FC = () => {
     setPages(prev => prev.map((p, i) => i === activePageIndex ? { ...p, ...updates } : p));
   }, [activePageIndex]);
 
+  const addPage = () => {
+    if (pages.length >= 6) {
+      alert("Max 6 sidor tillåtna.");
+      return;
+    }
+    const newPage: PageData = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: `Sida ${pages.length + 1}`,
+      background: 'bg-slate-100',
+      widgets: []
+    };
+    setPages([...pages, newPage]);
+    setActivePageIndex(pages.length);
+  };
+
+  const removePage = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pages.length <= 1) return;
+    if (window.confirm(`Vill du ta bort "${pages[index].name}"? Alla verktyg på sidan försvinner.`)) {
+      const newPages = pages.filter((_, i) => i !== index);
+      setPages(newPages);
+      setActivePageIndex(Math.max(0, activePageIndex - 1));
+    }
+  };
+
+  const startEditing = (index: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEditingPageIndex(index);
+    setEditNameValue(pages[index].name);
+  };
+
+  const savePageName = () => {
+    if (editingPageIndex !== null && editNameValue.trim()) {
+      setPages(prev => prev.map((p, i) => i === editingPageIndex ? { ...p, name: editNameValue.trim() } : p));
+    }
+    setEditingPageIndex(null);
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') savePageName();
+    if (e.key === 'Escape') setEditingPageIndex(null);
+  };
+
   const getInitialDimensions = (type: ToolType) => {
     switch (type) {
       case ToolType.TIMER: return { width: 450, height: 680 };
@@ -90,36 +138,10 @@ const App: React.FC = () => {
       case ToolType.STARS_WISH: return { width: 700, height: 750 };
       case ToolType.SOURCE_CRITICISM: return { width: 380, height: 750 };
       case ToolType.VENN_DIAGRAM: return { width: 980, height: 820 };
+      case ToolType.SAMR_HISSEN: return { width: 480, height: 850 };
+      case ToolType.CONCEPT_DIAMOND: return { width: 950, height: 800 };
       default: return { width: 700, height: 750 };
     }
-  };
-
-  const toolDescriptions: Record<ToolType, string> = {
-    [ToolType.TIMER]: "Sätt en tidsgräns för lektionsmoment. Välj mellan klassisk nedräkning, TimeTimer för visuell tid, eller ett vanligt stoppur.",
-    [ToolType.RANDOMIZER]: "Välj en slumpmässig elev på ett rättvist sätt.",
-    [ToolType.POLLING]: "Låt eleverna rösta live via sina egna enheter.",
-    [ToolType.ASSISTANT]: "Din pedagogiska AI-assistent. Få förslag på aktiviteter via text eller röst.",
-    [ToolType.TRAFFIC_LIGHT]: "Kommunicera visuellt vad som förväntas.",
-    [ToolType.GROUPING]: "Dela in klassen i slumpmässiga grupper.",
-    [ToolType.CHECKLIST]: "Gör lektionsplaneringen tydlig med moment och timers.",
-    [ToolType.WHITEBOARD]: "En rityta med stöd för olika pappersmönster.",
-    [ToolType.IMAGE_ANNOTATOR]: "Ladda upp en bild och rita direkt ovanpå den.",
-    [ToolType.QR_CODE]: "Skapa en QR-kod från vilken länk som helst.",
-    [ToolType.VIDEO_PLAYER]: "Spela YouTube-videor utan distraktioner.",
-    [ToolType.QUICK_LINKS]: "Hanterare för fristående länk-widgets.",
-    [ToolType.PLACEMENT]: "Planera klassrummets möblering och placering.",
-    [ToolType.LESSON_NAVIGATOR]: "Strukturera lektionen visuellt med mål och tidslinje.",
-    [ToolType.TIERED_TASK]: "Presentera en uppgift med dolda lager av stöd.",
-    [ToolType.MINDSET_CHECK]: "Mäter elevernas självbild inför och efter ett moment.",
-    [ToolType.CONVERSATION_BUBBLES]: "Erbjud språkliga stöttor och meningsbyggare.",
-    [ToolType.STARS_WISH]: "Formativ feedback: två styrkor och en önskan.",
-    [ToolType.SOURCE_CRITICISM]: "Interaktivt analysverktyg för källkritik.",
-    [ToolType.VENN_DIAGRAM]: "Jämför två eller tre begrepp med interaktiva cirklar.",
-    [ToolType.LINK]: "En snabbknapp till en webbplats.",
-    [ToolType.DASHBOARD]: "",
-    [ToolType.BACKGROUND]: "",
-    [ToolType.MATTEYTAN]: "",
-    [ToolType.ARRANGE]: ""
   };
 
   const toggleWidget = useCallback((type: ToolType) => {
@@ -188,6 +210,33 @@ const App: React.FC = () => {
     updateCurrentPage({ widgets: currentPage.widgets.map(w => w.id === id ? { ...w, zIndex: newZ } : w) });
   };
 
+  // Fixed missing toolDescriptions mapping ToolType to user-friendly descriptions
+  const toolDescriptions: Record<string, string> = {
+    [ToolType.TIMER]: 'Sätt fokus med en visuell nedräkning eller använd stoppuret för tidtagning.',
+    [ToolType.RANDOMIZER]: 'Dra en slumpmässig elev med hjälp av de klassiska glasspinnarna.',
+    [ToolType.POLLING]: 'Stäm av läget i klassrummet med snabba digitala frågor.',
+    [ToolType.ASSISTANT]: 'Få hjälp av AI att planera snabba och kreativa pedagogiska aktiviteter.',
+    [ToolType.TRAFFIC_LIGHT]: 'Kommunicera tydligt till eleverna vad som förväntas just nu.',
+    [ToolType.GROUPING]: 'Skapa slumpmässiga och rättvisa grupper för samarbete.',
+    [ToolType.CHECKLIST]: 'Håll ordning på lektionens moment med en interaktiv checklista.',
+    [ToolType.WHITEBOARD]: 'En rityta för att förklara begrepp och visualisera idéer.',
+    [ToolType.IMAGE_ANNOTATOR]: 'Ladda upp en bild och rita direkt ovanpå för att förtydliga.',
+    [ToolType.QR_CODE]: 'Skapa en QR-kod så att eleverna snabbt hittar till rätt webbsida.',
+    [ToolType.VIDEO_PLAYER]: 'Visa videoklipp utan reklam och distraktioner runt omkring.',
+    [ToolType.QUICK_LINKS]: 'Skapa genvägar till webbsidor som eleverna ofta använder.',
+    [ToolType.PLACEMENT]: 'Planera och optimera klassens placeringar på ett smart sätt.',
+    [ToolType.LESSON_NAVIGATOR]: 'Ge eleverna en tydlig överblick över lektionens mål och tidsplan.',
+    [ToolType.TIERED_TASK]: 'Erbjud differentiering med progressiva ledtrådar och utmaningar.',
+    [ToolType.MINDSET_CHECK]: 'Följ upp elevernas självförtroende och mindset under lektionen.',
+    [ToolType.CONVERSATION_BUBBLES]: 'Ge eleverna språkligt stöd i deras diskussioner och samtal.',
+    [ToolType.STARS_WISH]: 'Ett enkelt verktyg för att ge och visualisera formativ feedback.',
+    [ToolType.SOURCE_CRITICISM]: 'Hjälp eleverna att granska källor med ett interaktivt filter.',
+    [ToolType.VENN_DIAGRAM]: 'Jämför begrepp och hitta likheter och skillnader i en klassisk modell.',
+    [ToolType.SAMR_HISSEN]: 'Analysera och utveckla din digitala undervisning med SAMR-modellen.',
+    [ToolType.CONCEPT_DIAMOND]: 'Gå på djupet med viktiga begrepp med hjälp av Frayer-modellen.',
+    [ToolType.LINK]: 'En genväg till en specifik webbplats.'
+  };
+
   const metaData: Record<string, { title: string, subtitle?: string, icon: string }> = {
     [ToolType.TIMER]: { title: 'Timer', subtitle: 'Stoppur & Nedräkning', icon: '⏱️' },
     [ToolType.RANDOMIZER]: { title: 'Slumpa', subtitle: 'Rättvis fördelning', icon: '🎲' },
@@ -209,6 +258,8 @@ const App: React.FC = () => {
     [ToolType.STARS_WISH]: { title: 'Stjärnor & Önskan', subtitle: 'Formativ feedback', icon: '⭐' },
     [ToolType.SOURCE_CRITICISM]: { title: 'Källkritik', subtitle: 'Utvärdera källans pålitlighet', icon: '🔍' },
     [ToolType.VENN_DIAGRAM]: { title: 'Venn-Analys', subtitle: 'Jämför begrepp', icon: '⭕⭕' },
+    [ToolType.SAMR_HISSEN]: { title: 'SAMR-Hissen', subtitle: 'Lyft undervisningen', icon: '🛗' },
+    [ToolType.CONCEPT_DIAMOND]: { title: 'Begrepps-Diamant', subtitle: 'Frayer-modellen', icon: '💠' },
     [ToolType.LINK]: { title: 'Länk', icon: '🔗' }
   };
 
@@ -235,6 +286,8 @@ const App: React.FC = () => {
       case ToolType.STARS_WISH: return <TwoStarsAndAWish />;
       case ToolType.SOURCE_CRITICISM: return <SourceCriticismFilter />;
       case ToolType.VENN_DIAGRAM: return <VennDiagram />;
+      case ToolType.SAMR_HISSEN: return <SAMRElevator />;
+      case ToolType.CONCEPT_DIAMOND: return <ConceptDiamond />;
       default: return null;
     }
   };
@@ -286,8 +339,66 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* SIDNAVIGERING LÄNGST NER - Nu med Inline Edit */}
+        {!isStudent && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[99999] flex items-center gap-2 p-2 bg-white/95 backdrop-blur-md rounded-[2.2rem] shadow-2xl border border-white/50 animate-in slide-in-from-bottom-4">
+            {pages.map((page, idx) => (
+              <div key={page.id} className="relative group/tab flex items-center">
+                {editingPageIndex === idx ? (
+                  <input
+                    autoFocus
+                    value={editNameValue}
+                    onChange={(e) => setEditNameValue(e.target.value)}
+                    onBlur={savePageName}
+                    onKeyDown={handleEditKeyDown}
+                    className="px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest bg-indigo-50 text-indigo-700 outline-none border-2 border-indigo-200 w-[140px]"
+                  />
+                ) : (
+                  <button
+                    onClick={() => setActivePageIndex(idx)}
+                    onDoubleClick={(e) => startEditing(idx, e)}
+                    className={`px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                      activePageIndex === idx 
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' 
+                        : 'bg-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                    }`}
+                  >
+                    <span className="truncate max-w-[100px]">{page.name}</span>
+                    {activePageIndex === idx && (
+                      <span 
+                        onClick={(e) => startEditing(idx, e)}
+                        className="text-[10px] hover:scale-125 transition-transform cursor-pointer bg-white/20 p-1 rounded-md"
+                        title="Byt namn"
+                      >
+                        ✎
+                      </span>
+                    )}
+                  </button>
+                )}
+                {pages.length > 1 && editingPageIndex !== idx && (
+                  <button 
+                    onClick={(e) => removePage(idx, e)}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-white text-slate-400 rounded-full text-[8px] border border-slate-100 opacity-0 group-hover/tab:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center shadow-sm z-10"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            {pages.length < 6 && (
+              <button 
+                onClick={addPage}
+                className="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all font-black text-xl border border-transparent hover:border-indigo-100"
+                title="Lägg till ny sida"
+              >
+                +
+              </button>
+            )}
+          </div>
+        )}
+
         {activeWidgets.length === 0 && (
-          <div className="flex-1 flex items-center justify-center p-4 md:p-10 overflow-y-auto h-full">
+          <div className="flex-1 flex items-center justify-center p-4 md:p-8 overflow-y-auto h-full scroll-smooth custom-scrollbar">
             <Dashboard onSelectTool={toggleWidget} studentsCount={students.length} currentBackground={currentPage.background} onBackgroundSelect={(bg) => updateCurrentPage({ background: bg })} />
           </div>
         )}
