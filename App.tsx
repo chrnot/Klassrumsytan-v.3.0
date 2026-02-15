@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ToolType, Student, PlacementStudent, WidgetInstance, PageData } from './types';
 import Sidebar from './components/Sidebar';
