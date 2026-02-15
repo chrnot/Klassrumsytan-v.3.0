@@ -3,10 +3,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, GenerateContentResponse, Modality, LiveServerMessage } from "@google/genai";
 import { Message } from '../types';
 
-interface GeminiAssistantProps {
-}
+interface GeminiAssistantProps {}
 
-// Hjälpfunktioner för ljudhantering enligt API-riktlinjer
 function decodeBase64(base64: string) {
   const binaryString = atob(base64);
   const bytes = new Uint8Array(binaryString.length);
@@ -25,11 +23,10 @@ function encodeBase64(bytes: Uint8Array) {
 }
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
-  // Säkerställ att vi använder en ren ArrayBuffer för att undvika SharedArrayBuffer-problem
-  const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-  const dataInt16 = new Int16Array(arrayBuffer);
+  const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
   for (let channel = 0; channel < numChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
     for (let i = 0; i < frameCount; i++) {
@@ -41,7 +38,7 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 
 const GeminiAssistant: React.FC<GeminiAssistantProps> = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hej! Jag är din digitala assistent. Klicka på "Prata Live" för att starta en röstkonversation eller skriv din fråga här för att få förslag på en snabb aktivitet.' }
+    { role: 'assistant', content: 'Hej! Jag är din digitala assistent. Klicka på "Prata Live" för att starta en röstkonversation eller skriv din fråga nedan.' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -76,8 +73,9 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = () => {
     setIsConnecting(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-      const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const inputCtx = new AudioCtx({ sampleRate: 16000 });
+      const outputCtx = new AudioCtx({ sampleRate: 24000 });
       audioContexts.current = { input: inputCtx, output: outputCtx };
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -88,26 +86,20 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = () => {
           onopen: () => {
             setIsConnecting(false);
             setIsLiveActive(true);
-            
             const source = inputCtx.createMediaStreamSource(stream);
             const processor = inputCtx.createScriptProcessor(4096, 1, 1);
-            
             processor.onaudioprocess = (e) => {
               const inputData = e.inputBuffer.getChannelData(0);
-              const l = inputData.length;
-              const int16 = new Int16Array(l);
-              for (let i = 0; i < l; i++) int16[i] = inputData[i] * 32768;
-              
+              const int16 = new Int16Array(inputData.length);
+              for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
               const pcmBlob = {
                 data: encodeBase64(new Uint8Array(int16.buffer)),
                 mimeType: 'audio/pcm;rate=16000',
               };
-              
               sessionPromise.then(session => {
-                if (session) session.sendRealtimeInput({ media: pcmBlob });
+                session.sendRealtimeInput({ media: pcmBlob });
               });
             };
-            
             source.connect(processor);
             processor.connect(inputCtx.destination);
           },
@@ -116,10 +108,8 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = () => {
             if (base64Audio && audioContexts.current.output) {
               const ctx = audioContexts.current.output;
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
-              
               const uint8 = decodeBase64(base64Audio);
               const buffer = await decodeAudioData(uint8, ctx, 24000, 1);
-              
               const source = ctx.createBufferSource();
               source.buffer = buffer;
               source.connect(ctx.destination);
@@ -128,7 +118,6 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = () => {
               audioSourcesRef.current.add(source);
               source.onended = () => audioSourcesRef.current.delete(source);
             }
-
             if (message.serverContent?.interrupted) {
               audioSourcesRef.current.forEach(s => s.stop());
               audioSourcesRef.current.clear();
@@ -136,48 +125,40 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = () => {
             }
           },
           onclose: () => stopLive(),
-          onerror: (e) => {
-            console.error("Live Error:", e);
-            stopLive();
-          }
+          onerror: () => stopLive()
         },
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } },
-          systemInstruction: 'Du är en hjälpsam lärarassistent i ett svenskt klassrum. Din huvuduppgift är att föreslå snabba, engagerande aktiviteter för eleverna. Svara kort och vänligt.'
+          systemInstruction: 'Du är en hjälpsam lärarassistent. Svara kort och vänligt på svenska.'
         }
       });
-      
       sessionRef.current = await sessionPromise;
     } catch (err) {
       console.error(err);
       setIsConnecting(false);
-      alert("Kunde inte starta röstsamtal. Kontrollera mikrofonen.");
+      alert("Kunde inte starta röstsamtal.");
     }
   };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-
     const userMessage = input.trim();
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
-
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response: GenerateContentResponse = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: userMessage,
         config: {
-          systemInstruction: "Du är en expertpedagog och lärarassistent. Din huvuduppgift är att föreslå snabba, engagerande aktiviteter för eleverna (ca 5 minuter). Svara kortfattat på svenska.",
+          systemInstruction: "Du är en expertpedagog. Föreslå snabba aktiviteter. Svara kort på svenska.",
           temperature: 0.7,
         },
       });
-
-      const reply = response.text || "Jag kunde inte generera ett svar just nu.";
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: response.text || "Ett fel uppstod." }]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'assistant', content: "Ett fel uppstod." }]);
     } finally {
@@ -186,109 +167,30 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-[1.5rem] overflow-hidden">
-      <header className="bg-indigo-600 p-5 text-white flex justify-between items-center shrink-0">
-        <div>
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <span className="text-xl">✨</span> 5-min Aktivitet
-          </h2>
-          <p className="text-indigo-100 text-[10px] opacity-80 uppercase tracking-widest font-black">
-            {isLiveActive ? 'Live Röstläge' : 'AI-genererad inspiration'}
-          </p>
-        </div>
-        
-        <button
-          onClick={isLiveActive ? stopLive : startLive}
-          disabled={isConnecting}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg ${
-            isLiveActive 
-              ? 'bg-red-500 text-white animate-pulse' 
-              : 'bg-white text-indigo-600 hover:scale-105'
-          }`}
-        >
-          {isConnecting ? 'Ansluter...' : isLiveActive ? '🔴 Avsluta' : '🎙️ Prata Live'}
+    <div className="flex flex-col h-full bg-white overflow-hidden pt-6">
+      <div className="px-6 mb-4 flex justify-end shrink-0">
+        <button onClick={isLiveActive ? stopLive : startLive} disabled={isConnecting} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg border ${isLiveActive ? 'bg-red-500 border-red-600 text-white animate-pulse' : 'bg-white text-indigo-600 border-indigo-100 hover:bg-indigo-50'}`}>
+          {isConnecting ? 'Ansluter...' : isLiveActive ? '🔴 Avsluta Live' : '🎙️ Prata Live'}
         </button>
-      </header>
+      </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-slate-50/30">
         {messages.map((msg, i) => (
-          <div 
-            key={i} 
-            className={`max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed ${
-              msg.role === 'user' 
-                ? 'bg-indigo-600 text-white self-end ml-auto shadow-indigo-100 shadow-md' 
-                : 'bg-slate-50 text-slate-700 self-start border border-slate-100'
-            }`}
-          >
+          <div key={i} className={`max-w-[85%] p-4 rounded-[1.5rem] text-sm font-medium leading-relaxed ${msg.role === 'user' ? 'bg-indigo-600 text-white ml-auto shadow-md' : 'bg-white border border-slate-100 text-slate-700 shadow-sm'}`}>
             <p className="whitespace-pre-wrap">{msg.content}</p>
           </div>
         ))}
-        
         {isLoading && (
-          <div className="bg-slate-50 text-slate-400 p-4 rounded-3xl self-start flex gap-1.5 w-fit">
-            <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce"></div>
-            <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-            <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.4s]"></div>
-          </div>
-        )}
-
-        {isLiveActive && (
-          <div className="flex flex-col items-center justify-center py-10 text-indigo-500 space-y-6 animate-in fade-in zoom-in-95">
-            <div className="flex gap-1.5 items-end h-16">
-              {[...Array(6)].map((_, i) => (
-                <div 
-                  key={i}
-                  className="w-2 bg-indigo-500 rounded-full animate-bounce"
-                  style={{ 
-                    height: `${20 + Math.random() * 80}%`,
-                    animationDuration: `${0.5 + Math.random() * 0.5}s`,
-                    animationDelay: `${i * 0.1}s`
-                  }}
-                ></div>
-              ))}
-            </div>
-            <p className="font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">Assistenten lyssnar...</p>
+          <div className="bg-white border border-slate-100 p-4 rounded-[1.5rem] w-fit shadow-sm">
+            <span className="flex gap-1"><span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-bounce"></span><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.2s]"></span><span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.4s]"></span></span>
           </div>
         )}
       </div>
 
-      <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0">
-        {!isLiveActive && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {["5-minuters icebreaker", "Diskussionsfråga", "Mattegåta"].map((p) => (
-              <button
-                key={p}
-                onClick={() => setInput(p)}
-                className="text-[10px] bg-white border border-slate-200 text-slate-500 px-3 py-2 rounded-full hover:border-indigo-300 hover:text-indigo-600 transition-all font-bold uppercase tracking-tight"
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
-        
-        <form onSubmit={handleSend} className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isLiveActive}
-            placeholder={isLiveActive ? "Använd rösten för att prata..." : "Be om en aktivitet..."}
-            className="flex-1 px-5 py-3 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-100 transition-all"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim() || isLiveActive}
-            className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all ${
-              isLoading || !input.trim() || isLiveActive
-                ? 'bg-slate-200 text-slate-400' 
-                : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100'
-            }`}
-          >
-            Sänd
-          </button>
-        </form>
-      </div>
+      <form onSubmit={handleSend} className="p-6 bg-white border-t border-slate-100 flex gap-2">
+        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} disabled={isLiveActive} placeholder="Fråga assistenten..." className="flex-1 px-5 py-4 rounded-2xl border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 shadow-inner" />
+        <button type="submit" disabled={isLoading || !input.trim() || isLiveActive} className="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-lg active:scale-95 disabled:opacity-50">Sänd</button>
+      </form>
     </div>
   );
 };

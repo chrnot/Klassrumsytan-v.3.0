@@ -72,8 +72,6 @@ const App: React.FC = () => {
   }, [activePageIndex]);
 
   const getInitialDimensions = (type: ToolType) => {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) return { width: window.innerWidth, height: window.innerHeight };
     switch (type) {
       case ToolType.TIMER: return { width: 450, height: 680 };
       case ToolType.RANDOMIZER: return { width: 600, height: 600 };
@@ -92,7 +90,7 @@ const App: React.FC = () => {
       case ToolType.MINDSET_CHECK: return { width: 850, height: 850 };
       case ToolType.CONVERSATION_BUBBLES: return { width: 850, height: 800 };
       case ToolType.STARS_WISH: return { width: 700, height: 750 };
-      case ToolType.SOURCE_CRITICISM: return { width: 550, height: 800 };
+      case ToolType.SOURCE_CRITICISM: return { width: 380, height: 750 };
       default: return { width: 700, height: 750 };
     }
   };
@@ -138,7 +136,11 @@ const App: React.FC = () => {
       });
     } else {
       const { width, height } = getInitialDimensions(type);
-      const pos = { x: (window.innerWidth - width) / 2, y: (window.innerHeight - height) / 2 };
+      // Starta i mitten men aldrig utanför skärmkanten
+      const pos = { 
+        x: Math.max(20, (window.innerWidth - width) / 2), 
+        y: Math.max(20, (window.innerHeight - height) / 2) 
+      };
       
       updateCurrentPage({ 
         widgets: [...currentPage.widgets, { 
@@ -197,8 +199,8 @@ const App: React.FC = () => {
         const targetH = Math.min(w.height || dims.height, cellH - 30);
         return { 
           ...w, 
-          x: sidebarWidth + padding + (col * cellW) + (cellW - targetW) / 2, 
-          y: padding + (row * cellH) + (cellH - targetH) / 2, 
+          x: Math.max(0, sidebarWidth + padding + (col * cellW) + (cellW - targetW) / 2), 
+          y: Math.max(0, padding + (row * cellH) + (cellH - targetH) / 2), 
           width: targetW, height: targetH 
         };
       })
@@ -266,27 +268,27 @@ const App: React.FC = () => {
     }
   };
 
-  const metaData: Record<string, { title: string, icon: string }> = {
-    [ToolType.TIMER]: { title: 'Timer', icon: '⏱️' },
-    [ToolType.RANDOMIZER]: { title: 'Slumpa', icon: '🎲' },
-    [ToolType.POLLING]: { title: 'Omröstning', icon: '📊' },
-    [ToolType.ASSISTANT]: { title: 'AI-Aktivitet', icon: '✨' },
-    [ToolType.NOISE_METER]: { title: 'Ljudmätare', icon: '🔊' },
-    [ToolType.TRAFFIC_LIGHT]: { title: 'Trafikljus', icon: '🚦' },
-    [ToolType.GROUPING]: { title: 'Gruppering', icon: '👥' },
-    [ToolType.CHECKLIST]: { title: 'Arbetsgång', icon: '✅' },
-    [ToolType.WHITEBOARD]: { title: 'Whiteboard', icon: '🎨' },
-    [ToolType.IMAGE_ANNOTATOR]: { title: 'Bild-rita', icon: '📸' },
-    [ToolType.QR_CODE]: { title: 'QR-Kod', icon: '📱' },
-    [ToolType.VIDEO_PLAYER]: { title: 'Video', icon: '🎬' },
-    [ToolType.QUICK_LINKS]: { title: 'Genvägar', icon: '🔗' },
-    [ToolType.PLACEMENT]: { title: 'Klassplacering', icon: '🪑' },
-    [ToolType.LESSON_NAVIGATOR]: { title: 'Lektions-Navigatör', icon: '🧭' },
-    [ToolType.TIERED_TASK]: { title: 'Nivå-Kortet', icon: '🎴' },
-    [ToolType.MINDSET_CHECK]: { title: 'Känslo-Kollen', icon: '📊' },
-    [ToolType.CONVERSATION_BUBBLES]: { title: 'Snack-Bubblan 2.0', icon: '💬' },
-    [ToolType.STARS_WISH]: { title: 'Stjärnor & Önskan', icon: '⭐' },
-    [ToolType.SOURCE_CRITICISM]: { title: 'Källkritik', icon: '🔍' },
+  const metaData: Record<string, { title: string, subtitle?: string, icon: string }> = {
+    [ToolType.TIMER]: { title: 'Timer', subtitle: 'Stoppur & Nedräkning', icon: '⏱️' },
+    [ToolType.RANDOMIZER]: { title: 'Slumpa', subtitle: 'Rättvis fördelning', icon: '🎲' },
+    [ToolType.POLLING]: { title: 'Omröstning', subtitle: 'Live digital avstämning', icon: '📊' },
+    [ToolType.ASSISTANT]: { title: 'AI-Aktivitet', subtitle: 'Röststyrd hjälp', icon: '✨' },
+    [ToolType.NOISE_METER]: { title: 'Ljudmätare', subtitle: 'Realtidsvolym', icon: '🔊' },
+    [ToolType.TRAFFIC_LIGHT]: { title: 'Trafikljus', subtitle: 'Kommunikationsstatus', icon: '🚦' },
+    [ToolType.GROUPING]: { title: 'Gruppering', subtitle: 'Dela in klassen', icon: '👥' },
+    [ToolType.CHECKLIST]: { title: 'Arbetsgång', subtitle: 'Planera moment', icon: '✅' },
+    [ToolType.WHITEBOARD]: { title: 'Whiteboard', subtitle: 'Rityta för förklaringar', icon: '🎨' },
+    [ToolType.IMAGE_ANNOTATOR]: { title: 'Bild-rita', subtitle: 'Annotera filer', icon: '📸' },
+    [ToolType.QR_CODE]: { title: 'QR-Kod', subtitle: 'Dela länkar snabbt', icon: '📱' },
+    [ToolType.VIDEO_PLAYER]: { title: 'Video', subtitle: 'Distraktionsfri visning', icon: '🎬' },
+    [ToolType.QUICK_LINKS]: { title: 'Genvägar', subtitle: 'Hantera länkwidgets', icon: '🔗' },
+    [ToolType.PLACEMENT]: { title: 'Klassplacering', subtitle: 'Möbleringsverktyg', icon: '🪑' },
+    [ToolType.LESSON_NAVIGATOR]: { title: 'Lektions-Navigatör', subtitle: 'Struktur & Mål', icon: '🧭' },
+    [ToolType.TIERED_TASK]: { title: 'Nivå-Kortet', subtitle: 'Differentierat stöd', icon: '🎴' },
+    [ToolType.MINDSET_CHECK]: { title: 'Känslo-Kollen', subtitle: 'Growth Mindset', icon: '📊' },
+    [ToolType.CONVERSATION_BUBBLES]: { title: 'Snack-Bubblan', subtitle: 'Språkligt stöd', icon: '💬' },
+    [ToolType.STARS_WISH]: { title: 'Stjärnor & Önskan', subtitle: 'Formativ feedback', icon: '⭐' },
+    [ToolType.SOURCE_CRITICISM]: { title: 'Källkritik', subtitle: 'Utvärdera källans pålitlighet', icon: '🔍' },
     [ToolType.LINK]: { title: 'Länk', icon: '🔗' }
   };
 
@@ -316,23 +318,23 @@ const App: React.FC = () => {
           <div className="absolute top-6 left-6 w-14 h-14 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl flex items-center justify-center text-2xl z-[99999] hover:scale-110 transition-transform cursor-pointer" onClick={() => setIsSidebarOpen(true)}>🏫</div>
         )}
 
-        {/* Widget layer */}
+        {/* Widget layer - Simplified container */}
         <div key={currentPage.id} className="absolute inset-0 z-10 pointer-events-none">
           {activeWidgets.map((w) => (
-            <div key={w.id} className="pointer-events-auto">
-              <WidgetFrame
-                title={w.type === ToolType.LINK ? (w.data?.title || 'Länk') : (metaData[w.type]?.title || 'Verktyg')} 
-                icon={w.type === ToolType.LINK ? '🔗' : (metaData[w.type]?.icon || '⚙️')} 
-                description={toolDescriptions[w.type]}
-                x={w.x} y={w.y} zIndex={w.zIndex} initialWidth={w.width} initialHeight={w.height}
-                onMove={(nx, ny) => updateWidgetPosition(w.id, nx, ny)}
-                onResize={(nw, nh) => updateWidgetSize(w.id, nw, nh)}
-                onFocus={() => focusWidget(w.id)}
-                onClose={() => closeWidget(w.id)}
-              >
-                {getWidgetComponent(w)}
-              </WidgetFrame>
-            </div>
+            <WidgetFrame
+              key={w.id}
+              title={w.type === ToolType.LINK ? (w.data?.title || 'Länk') : (metaData[w.type]?.title || 'Verktyg')} 
+              subtitle={metaData[w.type]?.subtitle}
+              icon={w.type === ToolType.LINK ? '🔗' : (metaData[w.type]?.icon || '⚙️')} 
+              description={toolDescriptions[w.type]}
+              x={w.x} y={w.y} zIndex={w.zIndex} initialWidth={w.width} initialHeight={w.height}
+              onMove={(nx, ny) => updateWidgetPosition(w.id, nx, ny)}
+              onResize={(nw, nh) => updateWidgetSize(w.id, nw, nh)}
+              onFocus={() => focusWidget(w.id)}
+              onClose={() => closeWidget(w.id)}
+            >
+              {getWidgetComponent(w)}
+            </WidgetFrame>
           ))}
         </div>
 
