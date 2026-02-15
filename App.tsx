@@ -4,7 +4,6 @@ import { ToolType, Student, PlacementStudent, WidgetInstance, PageData } from '.
 import Sidebar from './components/Sidebar';
 import Timer from './components/Timer';
 import Randomizer from './components/Randomizer';
-import NoiseMeter from './components/NoiseMeter';
 import TrafficLight from './components/TrafficLight';
 import GroupingTool from './components/GroupingTool';
 import SmartChecklist from './components/SmartChecklist';
@@ -77,7 +76,6 @@ const App: React.FC = () => {
       case ToolType.RANDOMIZER: return { width: 600, height: 600 };
       case ToolType.POLLING: return { width: 850, height: 750 };
       case ToolType.ASSISTANT: return { width: 500, height: 750 };
-      case ToolType.NOISE_METER: return { width: 500, height: 700 };
       case ToolType.TRAFFIC_LIGHT: return { width: 500, height: 700 };
       case ToolType.CHECKLIST: return { width: 550, height: 750 };
       case ToolType.GROUPING: return { width: 750, height: 750 };
@@ -100,7 +98,6 @@ const App: React.FC = () => {
     [ToolType.RANDOMIZER]: "Välj en slumpmässig elev på ett rättvist sätt. Du kan hantera klasslistan direkt i verktyget eller massimportera namn.",
     [ToolType.POLLING]: "Låt eleverna rösta live via sina egna enheter. Perfekt för att stämma av förståelse eller göra snabba omröstningar.",
     [ToolType.ASSISTANT]: "Din pedagogiska AI-assistent. Få förslag på 5-minutersaktiviteter, mattegåtor eller diskussionsfrågor via text eller röst.",
-    [ToolType.NOISE_METER]: "Visar ljudnivån i klassrummet i realtid. Om det blir för högt hörs en varningssignal för att hjälpa eleverna reglera volymen.",
     [ToolType.TRAFFIC_LIGHT]: "Kommunicera visuellt vad som förväntas. Redigera texterna för att passa din lektion och använd 'Fokusläge' för att visa stort på tavlan.",
     [ToolType.GROUPING]: "Dela in klassen i slumpmässiga grupper. Du kan redigera grupperna i efterhand och visa resultatet stort på tavlan.",
     [ToolType.CHECKLIST]: "Gör lektionsplaneringen tydlig. Lägg till moment, sätt timers och använd 'Fokusläge' för att markera vad klassen jobbar med just nu.",
@@ -243,7 +240,6 @@ const App: React.FC = () => {
       case ToolType.RANDOMIZER: return <Randomizer students={students} setStudents={setStudents} />;
       case ToolType.POLLING: return <PollingTool initialType="standard" />;
       case ToolType.ASSISTANT: return <GeminiAssistant />;
-      case ToolType.NOISE_METER: return <NoiseMeter />;
       case ToolType.TRAFFIC_LIGHT: return <TrafficLight />;
       case ToolType.GROUPING: return <GroupingTool students={students} onResize={(w, h) => updateWidgetSize(widget.id, w, h)} />;
       case ToolType.CHECKLIST: return <SmartChecklist />;
@@ -273,7 +269,6 @@ const App: React.FC = () => {
     [ToolType.RANDOMIZER]: { title: 'Slumpa', subtitle: 'Rättvis fördelning', icon: '🎲' },
     [ToolType.POLLING]: { title: 'Omröstning', subtitle: 'Live digital avstämning', icon: '📊' },
     [ToolType.ASSISTANT]: { title: 'AI-Aktivitet', subtitle: 'Röststyrd hjälp', icon: '✨' },
-    [ToolType.NOISE_METER]: { title: 'Ljudmätare', subtitle: 'Realtidsvolym', icon: '🔊' },
     [ToolType.TRAFFIC_LIGHT]: { title: 'Trafikljus', subtitle: 'Kommunikationsstatus', icon: '🚦' },
     [ToolType.GROUPING]: { title: 'Gruppering', subtitle: 'Dela in klassen', icon: '👥' },
     [ToolType.CHECKLIST]: { title: 'Arbetsgång', subtitle: 'Planera moment', icon: '✅' },
@@ -369,10 +364,6 @@ const App: React.FC = () => {
                   <button onClick={() => { toggleWidget(ToolType.SOURCE_CRITICISM); setIsSystemMenuOpen(false); }} className={`w-14 h-14 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl flex flex-col items-center justify-center hover:scale-110 active:scale-95 transition-all border border-white group ${openWidgetTypes.includes(ToolType.SOURCE_CRITICISM) ? 'ring-2 ring-indigo-500' : ''}`}>
                     <span className="text-xl">🔍</span>
                     <span className="text-[7px] font-black uppercase text-slate-400 group-hover:text-indigo-500 mt-0.5">Kritik</span>
-                  </button>
-                  <button onClick={() => { toggleWidget(ToolType.NOISE_METER); setIsSystemMenuOpen(false); }} className={`w-14 h-14 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl flex flex-col items-center justify-center text-2xl hover:scale-110 active:scale-95 transition-all border border-white group ${openWidgetTypes.includes(ToolType.NOISE_METER) ? 'ring-2 ring-indigo-500' : ''}`}>
-                    <span className="text-xl">🔊</span>
-                    <span className="text-[7px] font-black uppercase text-slate-400 group-hover:text-indigo-500 mt-0.5">Ljud</span>
                   </button>
                   <button onClick={() => { setIsBackgroundSettingsOpen(true); setIsSystemMenuOpen(false); }} className="w-14 h-14 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl flex flex-col items-center justify-center hover:scale-110 active:scale-95 transition-all border border-white group">
                     <span className="text-xl">🖼️</span>
