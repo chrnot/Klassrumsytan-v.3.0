@@ -1,52 +1,25 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChecklistItem } from '../types';
 
-const KEYWORD_EMOJIS: Record<string, string> = {
-  'läs': '📖',
-  'skriv': '✍️',
-  'diskutera': '🗣️',
-  'räkna': '🔢',
-  'titta': '👁️',
-  'lyssna': '👂',
-  'rita': '🎨',
-  'samarbeta': '👥',
-  'städa': '🧹',
-  'lunch': '🍱',
-  'rast': '⚽',
-  'prov': '📝',
-  'jobba': '💼'
-};
+const KEYWORD_EMOJIS: Record<string, string> = { 'läs': '📖', 'skriv': '✍️', 'diskutera': '🗣️', 'räkna': '🔢', 'titta': '👁️', 'lyssna': '👂', 'rita': '🎨', 'samarbeta': '👥', 'städa': '🧹', 'lunch': '🍱', 'rast': '⚽', 'prov': '📝', 'jobba': '💼' };
 
 const SmartChecklist: React.FC = () => {
   const [items, setItems] = useState<ChecklistItem[]>(() => {
     const saved = localStorage.getItem('kp_checklist_items');
-    return saved ? JSON.parse(saved) : [
-      { id: '1', text: 'Läs sid 24-28 i boken', completed: false, isSpotlight: false, timerSeconds: 600 },
-      { id: '2', text: 'Skriv svar på frågorna', completed: false, isSpotlight: false, timerSeconds: 900 },
-      { id: '3', text: 'Diskutera med grannen', completed: false, isSpotlight: false, timerSeconds: 300 }
-    ];
+    return saved ? JSON.parse(saved) : [{ id: '1', text: 'Läs sid 24-28 i boken', completed: false, isSpotlight: false, timerSeconds: 600 }, { id: '2', text: 'Skriv svar på frågorna', completed: false, isSpotlight: false, timerSeconds: 900 }, { id: '3', text: 'Diskutera med grannen', completed: false, isSpotlight: false, timerSeconds: 300 }];
   });
-
   const [isEditing, setIsEditing] = useState(false);
   const [activeTimerId, setActiveTimerId] = useState<string | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem('kp_checklist_items', JSON.stringify(items));
-  }, [items]);
-
-  // Timer logic
+  useEffect(() => { localStorage.setItem('kp_checklist_items', JSON.stringify(items)); }, [items]);
   useEffect(() => {
     let interval: any = null;
     if (activeTimerId) {
       interval = setInterval(() => {
         setItems(prev => prev.map(item => {
-          if (item.id === activeTimerId && item.timerSeconds && item.timerSeconds > 0) {
-            return { ...item, timerSeconds: item.timerSeconds - 1 };
-          }
-          if (item.id === activeTimerId && item.timerSeconds === 0) {
-            setActiveTimerId(null);
-          }
+          if (item.id === activeTimerId && item.timerSeconds && item.timerSeconds > 0) return { ...item, timerSeconds: item.timerSeconds - 1 };
+          if (item.id === activeTimerId && item.timerSeconds === 0) setActiveTimerId(null);
           return item;
         }));
       }, 1000);
@@ -54,184 +27,44 @@ const SmartChecklist: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeTimerId]);
 
-  const getAutoEmoji = (text: string) => {
-    const words = text.toLowerCase().split(' ');
-    for (const word of words) {
-      if (KEYWORD_EMOJIS[word]) return KEYWORD_EMOJIS[word];
-    }
-    return null;
-  };
-
-  const addItem = () => {
-    const newItem: ChecklistItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      text: '',
-      completed: false,
-      isSpotlight: false
-    };
-    setItems([...items, newItem]);
-    setIsEditing(true);
-  };
-
-  const toggleComplete = (id: string) => {
-    if (isEditing) return;
-    setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, completed: !item.completed, isSpotlight: false } : item
-    ));
-    if (activeTimerId === id) setActiveTimerId(null);
-  };
-
-  const toggleSpotlight = (id: string) => {
-    setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, isSpotlight: !item.isSpotlight } : { ...item, isSpotlight: false }
-    ));
-  };
-
-  const updateItemText = (id: string, text: string) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, text } : item));
-  };
-
-  const removeItem = (id: string) => {
-    if (activeTimerId === id) setActiveTimerId(null);
-    setItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const setTimerForItem = (id: string, minutes: number) => {
-    setItems(prev => prev.map(item => 
-      item.id === id ? { 
-        ...item, 
-        timerSeconds: (minutes > 0 && !isNaN(minutes)) ? minutes * 60 : undefined 
-      } : item
-    ));
-  };
-
   const completedCount = items.filter(i => i.completed).length;
   const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
-  const spotlightActive = items.some(i => i.isSpotlight);
-
-  const formatTimer = (seconds?: number) => {
-    if (seconds === undefined) return '';
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
 
   return (
-    <div className="flex flex-col h-full bg-white animate-in fade-in duration-500 pt-6">
+    <div className="flex flex-col h-full bg-white pt-6">
       <div className="flex justify-end gap-2 px-6 mb-4 shrink-0">
-          <button 
-            onClick={() => setIsEditing(!isEditing)}
-            className={`px-4 py-1.5 rounded-xl border font-bold text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${
-              isEditing 
-                ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-100' 
-                : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
-            }`}
-          >
-            {isEditing ? '💾 Spara' : '✏️ Redigera'}
-          </button>
+        <button onClick={() => setIsEditing(!isEditing)} className={`px-4 py-1.5 rounded-xl border font-bold text-[10px] uppercase tracking-widest transition-all ${isEditing ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white text-slate-500 border-slate-200'}`}>
+          {isEditing ? '💾 Spara' : '✏️ Redigera'}
+        </button>
       </div>
-
       <div className="flex-1 overflow-y-auto custom-scrollbar px-6 space-y-3 mb-6">
         {items.map((item) => {
-          const emoji = getAutoEmoji(item.text);
-          const isDimmed = spotlightActive && !item.isSpotlight;
-
+          const emoji = Object.entries(KEYWORD_EMOJIS).find(([k]) => item.text.toLowerCase().includes(k))?.[1];
           return (
-            <div 
-              key={item.id}
-              className={`group flex items-center gap-4 p-4 rounded-3xl transition-all duration-300 border-2 ${
-                item.isSpotlight 
-                  ? 'bg-indigo-50 border-indigo-200 shadow-lg shadow-indigo-100/50 scale-[1.02]' 
-                  : item.completed 
-                    ? 'bg-slate-50 border-slate-50 opacity-50' 
-                    : isDimmed 
-                      ? 'opacity-30 border-transparent blur-[0.5px]' 
-                      : 'bg-white border-slate-50 hover:border-slate-100 hover:bg-slate-50/30'
-              }`}
-            >
-              <button 
-                onClick={() => toggleComplete(item.id)}
-                disabled={isEditing}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 ${
-                  item.completed 
-                    ? 'bg-emerald-500 text-white' 
-                    : 'bg-white border-2 border-slate-200 group-hover:border-indigo-300'
-                }`}
-              >
-                {item.completed && '✓'}
-              </button>
-
+            <div key={item.id} className={`group flex items-center gap-4 p-4 rounded-3xl transition-all border-2 ${item.isSpotlight ? 'bg-indigo-50 border-indigo-200 scale-[1.02]' : item.completed ? 'bg-slate-50 border-slate-50 opacity-50' : 'bg-white border-slate-50'}`}>
+              <button onClick={() => !isEditing && setItems(prev => prev.map(i => i.id === item.id ? { ...i, completed: !i.completed, isSpotlight: false } : i))} className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 ${item.completed ? 'bg-emerald-500 text-white' : 'bg-white border-2 border-slate-200'}`}>{item.completed && '✓'}</button>
               <div className="flex-1 min-w-0">
                 {isEditing ? (
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      value={item.text}
-                      onChange={(e) => updateItemText(item.id, e.target.value)}
-                      placeholder="Vad ska vi göra?"
-                      className="flex-1 bg-transparent border-b border-indigo-100 focus:border-indigo-500 outline-none font-bold text-slate-700 py-1"
-                    />
-                    <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl shrink-0 group/time hover:bg-indigo-50 transition-colors">
-                      <span className="text-[8px] font-black text-slate-400">MIN</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={item.timerSeconds ? Math.floor(item.timerSeconds / 60) : ''}
-                        onChange={(e) => setTimerForItem(item.id, parseInt(e.target.value))}
-                        className="w-10 bg-transparent text-sm font-black text-indigo-600 outline-none text-center"
-                      />
-                    </div>
-                  </div>
+                  <input type="text" value={item.text} onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? { ...i, text: e.target.value } : i))} className="w-full bg-transparent border-b border-indigo-100 font-bold text-slate-700 py-1" />
                 ) : (
                   <div className="flex items-center gap-2">
-                    {emoji && <span className="text-xl shrink-0">{emoji}</span>}
-                    <span className={`font-black text-lg truncate ${item.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                      {item.text || 'Tom uppgift'}
-                    </span>
-                    {item.timerSeconds !== undefined && (
-                      <span className={`ml-auto font-mono text-sm px-2.5 py-1 rounded-xl shadow-sm border ${
-                        activeTimerId === item.id 
-                          ? 'bg-amber-500 text-white border-amber-400 animate-pulse' 
-                          : 'bg-slate-50 text-slate-500 border-slate-100'
-                      }`}>
-                        {formatTimer(item.timerSeconds)}
-                      </span>
-                    )}
+                    {emoji && <span className="text-xl">{emoji}</span>}
+                    <span className={`font-black text-lg truncate ${item.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{item.text}</span>
+                    {item.timerSeconds !== undefined && <span className="ml-auto font-mono text-sm px-2.5 py-1 rounded-xl bg-slate-50 text-slate-500 border border-slate-100">{Math.floor(item.timerSeconds / 60)}:{ (item.timerSeconds % 60).toString().padStart(2, '0') }</span>}
                   </div>
                 )}
               </div>
-
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                {isEditing ? (
-                  <button onClick={() => removeItem(item.id)} className="p-2 hover:bg-red-50 rounded-xl text-slate-300 hover:text-red-500">🗑️</button>
-                ) : (
-                  !item.completed && (
-                    <>
-                      <button onClick={() => toggleSpotlight(item.id)} className={`p-2 rounded-xl transition-all ${item.isSpotlight ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-white text-slate-400 hover:text-indigo-500'}`}>🔦</button>
-                      {item.timerSeconds !== undefined && (
-                        <button onClick={() => setActiveTimerId(activeTimerId === item.id ? null : item.id)} className={`p-2 rounded-xl transition-all ${activeTimerId === item.id ? 'bg-amber-100 text-amber-600' : 'hover:bg-white text-slate-400 hover:text-amber-500'}`}>{activeTimerId === item.id ? '⏸' : '▶'}</button>
-                      )}
-                    </>
-                  )
-                )}
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+                {isEditing ? <button onClick={() => setItems(prev => prev.filter(i => i.id !== item.id))} className="p-2 text-slate-300 hover:text-red-500">🗑️</button> : !item.completed && <button onClick={() => setItems(prev => prev.map(i => i.id === item.id ? { ...i, isSpotlight: !i.isSpotlight } : { ...i, isSpotlight: false }))} className={`p-2 rounded-xl ${item.isSpotlight ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>🔦</button>}
               </div>
             </div>
           );
         })}
-
-        {isEditing && (
-          <button onClick={addItem} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-[2.5rem] text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2 group"><span className="text-lg group-hover:scale-125 transition-transform">➕</span> Lägg till moment</button>
-        )}
+        {isEditing && <button onClick={() => setItems([...items, { id: Math.random().toString(36).substr(2, 9), text: '', completed: false, isSpotlight: false }])} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-[2.5rem] text-slate-400 font-bold hover:text-indigo-500 transition-all">+ Lägg till</button>}
       </div>
-
       <footer className="shrink-0 p-6 border-t border-slate-50">
-        <div className="flex justify-between items-center mb-2 px-1">
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lektionens Framsteg ({completedCount}/{items.length})</span>
-          <span className="text-[9px] font-black text-indigo-600">{Math.round(progress)}%</span>
-        </div>
-        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-50">
-          <div className={`h-full rounded-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-emerald-500' : 'bg-indigo-600'}`} style={{ width: `${progress}%` }} />
-        </div>
+        <div className="flex justify-between items-center mb-2 px-1"><span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Progress</span><span className="text-[9px] font-black text-indigo-600">{Math.round(progress)}%</span></div>
+        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-600 transition-all duration-1000" style={{ width: `${progress}%` }} /></div>
       </footer>
     </div>
   );
